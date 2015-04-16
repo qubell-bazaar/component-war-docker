@@ -1,0 +1,84 @@
+application:
+  interfaces:
+    configuration:
+      "*": bind(git#configuration.*)
+    petclinic:
+      "*": bind(http#server.*)
+  components:
+    data:
+      type: docker.Volume
+    cache:
+      type: docker.Volume
+    git:
+      type: docker.Container
+      interfaces:
+        configuration:
+          git-url:    configuration(string)
+          git-branch: configuration(string)
+        volume:
+          volume-name: consume-signal(string)
+        source:
+          volume-name: publish-signal(string)
+          git-commit:  publish-signal(string)
+      required:
+        - volume
+      configuration:
+        docker.image: rtimush/git-updater:latest
+        docker.daemonize: false
+        docker.environment:
+          GIT_URL: "{$.configuration.git-url}"
+          GIT_BRANCH: "{$.configuration.git-branch}"
+        docker.volumes:
+          "/source": "{$.volume.*.volume-name}"
+        docker.signals:  
+          source.git-commit: "{$.docker.stdOut}"
+          source.volume-name: "{$.volume.*.volume-name[0]}"
+    maven:
+      type: docker.Container
+      interfaces:
+        source:
+          git-commit:  consume-signal(string)
+          volume-name: consume-signal(string)
+        cache:
+          volume-name: consume-signal(string)
+        build:
+          volume-name: publish-signal(string)
+          war-path:    publish-signal(string)
+        configuration:
+          options: configuration(string)
+      required:
+        - source
+        - cache
+      configuration:
+        docker.image: rtimush/maven-builder:latest
+        docker.command: [ "sh", "-c", "mvn clean package 1>&2 && find target -name '*.war'" ]
+        docker.daemonize: false
+        docker.volumes:
+          "/source": "{$.source.*.volume-name[0]}"
+          "/root/.m2": "{$.cache.*.volume-name[0]}"
+        docker.signals:  
+          build.volume-name: "{$.source.*.volume-name[0]}"
+          build.war-path: "{$.docker.stdOut}?{$.source.*.git-commit[0]}"
+    http:
+      type: docker.Container
+      interfaces:
+        www:
+          volume-name: consume-signal(string)
+          war-path:    consume-signal(string)
+        server:
+          war-url: publish-signal(string)
+      required:
+        - www
+      configuration:
+        docker.image: fnichol/uhttpd
+        docker.volumes:
+          "/www": "{$.www.*.volume-name[0]}"
+        docker.expose:
+          "80": "*"
+        docker.signals:
+          server.war-url: "http://{$.docker.ports.80.host}:{$.docker.ports.80.port}/{$.www.*.war-path[0]}"
+  bindings:
+    - [git#volume, data]
+    - [maven#source, git]
+    - [maven#cache, cache]
+    - [http#www, maven]

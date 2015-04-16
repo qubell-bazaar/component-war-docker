@@ -1,0 +1,13 @@
+kit:
+  name: "WAR archive builder"
+  link: https://github.com/qubell-bazaar/component-war-docker
+  applications:
+    - name: "WAR on Docker"
+      manifest: https://raw.github.com/qubell-bazaar/component-war-docker/master/war.yml
+  provider:
+    name: Qubell
+    link: http://qubell.com
+  documentation:
+    overview: |
+      This application clones a GIT repository, builds a WAR archive with `mvn package` command and publishes it over HTTP.
+      A Docker Service must be configured in your environment.
