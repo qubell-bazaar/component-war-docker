@@ -23,7 +23,7 @@ application:
       required:
         - volume
       configuration:
-        docker.image: rtimush/git-updater:latest
+        docker.image: qubell/git-updater:latest
         docker.daemonize: false
         docker.environment:
           GIT_URL: "{$.configuration.git-url}"
@@ -50,7 +50,7 @@ application:
         - source
         - cache
       configuration:
-        docker.image: rtimush/maven-builder:latest
+        docker.image: qubell/maven-builder:latest
         docker.command: [ "sh", "-c", "mvn clean package 1>&2 && find target -name '*.war'" ]
         docker.daemonize: false
         docker.volumes:
