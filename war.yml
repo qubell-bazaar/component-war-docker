@@ -16,13 +16,21 @@ application:
       type: docker.Container
       interfaces:
         configuration:
-          git-url:    configuration(string)
-          git-branch: configuration(string)
+          git-url:
+            type: configuration(string)
+            name: "Git Repo URL"
+          git-branch:
+            type: configuration(string)
+            name: "Branch"
         volume:
           volume-name: consume-signal(string)
         source:
-          volume-name: publish-signal(string)
-          git-commit:  publish-signal(string)
+          volume-name:
+            type: publish-signal(string)
+            name: "Data Volume Name"
+          git-commit:
+            type: publish-signal(string)
+            name: "Git Commit"
       required:
         - volume
       configuration:
@@ -45,11 +53,19 @@ application:
         cache:
           volume-name: consume-signal(string)
         build:
-          volume-name: publish-signal(string)
-          war-path:    publish-signal(string)
+          volume-name:
+            type: publish-signal(string)
+            name: "Data Volume Name"
+          war-path:
+            type: publish-signal(string)
+            name: "Relative WAR Path"
         configuration:
-          war-path: configuration(string)
-          options: configuration(string)
+          war-path:
+            type: configuration(string)
+            name: "Result WAR File Name"
+          options:
+            type: configuration(string)
+            name: "Build Options"
       required:
         - source
         - cache
@@ -70,7 +86,9 @@ application:
           volume-name: consume-signal(string)
           war-path:    consume-signal(string)
         server:
-          war-url: publish-signal(string)
+          war-url:
+            type: publish-signal(string)
+            name: "WAR Url"
       required:
         - www
       configuration:
