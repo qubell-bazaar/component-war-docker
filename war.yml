@@ -71,7 +71,7 @@ application:
         - cache
       configuration:
         docker.image: qubell/maven-builder:latest
-        docker.command: [ "sh", "-c", "rm /source/{$.configuration.war-path} ; mvn clean package 1>&2 && cp `find target -name '*.war'` /source/{$.configuration.war-path}" ]
+        docker.command: [ "sh", "-c", "rm /source/{$.configuration.war-path} ; mvn -DskipTests=true clean package 1>&2 && cp `find target -name '*.war'` /source/{$.configuration.war-path}" ]
         docker.daemonize: false
         docker.volumes:
           "/source": "{$.source.*.volume-name[0]}"
