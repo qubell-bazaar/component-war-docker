@@ -3,7 +3,7 @@ application:
     configuration:
       war-path: bind(maven#configuration.war-path)
       "*": bind(git#configuration.*)
-    petclinic:
+    artifact:
       "*": bind(http#server.*)
   configuration:
     configuration.war-path: "application.war"
@@ -86,7 +86,7 @@ application:
           volume-name: consume-signal(string)
           war-path:    consume-signal(string)
         server:
-          war-url:
+          artifact-url:
             type: publish-signal(string)
             name: "WAR Url"
       required:
@@ -98,7 +98,7 @@ application:
         docker.expose:
           "80": "*"
         docker.signals:
-          server.war-url: "http://{$.docker.ports.80.host}:{$.docker.ports.80.port}/{$.www.*.war-path[0]}"
+          server.artifact-url: "http://{$.docker.ports.80.host}:{$.docker.ports.80.port}/{$.www.*.war-path[0]}"
   bindings:
     - [git#volume, data]
     - [maven#source, git]
