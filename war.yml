@@ -1,18 +1,15 @@
 application:
   interfaces:
     configuration:
-      war-path: bind(maven#configuration.war-path)
-      "*": bind(git#configuration.*)
+      "*": bind(builder#configuration.*)
     artifact:
-      "*": bind(http#server.*)
+      artifact-url: bind(checker#connection.url)
   configuration:
     configuration.war-path: "application.war"
+  bindings:
+    - [builder, checker]
   components:
-    data:
-      type: docker.Volume
-    cache:
-      type: docker.Volume
-    git:
+    builder:
       type: docker.Container
       interfaces:
         configuration:
@@ -22,85 +19,25 @@ application:
           git-branch:
             type: configuration(string)
             name: "Branch"
-        volume:
-          volume-name: consume-signal(string)
-        source:
-          volume-name:
+          war-path:
+              type: configuration(string)
+              name: "Result WAR File Name"
+        war:
+          url:
             type: publish-signal(string)
-            name: "Data Volume Name"
-          git-commit:
-            type: publish-signal(string)
-            name: "Git Commit"
-      required:
-        - volume
+            name: "WAR Url"
       configuration:
-        docker.image: qubell/git-updater:latest
-        docker.daemonize: false
+        docker.image: qubell/artifact-builder:latest
         docker.environment:
           GIT_URL: "{$.configuration.git-url}"
           GIT_BRANCH: "{$.configuration.git-branch}"
-        docker.volumes:
-          "/source": "{$.volume.*.volume-name}"
-        docker.signals:  
-          source.git-commit: "{$.configuration.git-branch}"
-          source.volume-name: "{$.volume.*.volume-name[0]}"
-    maven:
-      type: docker.Container
-      interfaces:
-        source:
-          git-commit:  consume-signal(string)
-          volume-name: consume-signal(string)
-        cache:
-          volume-name: consume-signal(string)
-        build:
-          volume-name:
-            type: publish-signal(string)
-            name: "Data Volume Name"
-          war-path:
-            type: publish-signal(string)
-            name: "Relative WAR Path"
-        configuration:
-          war-path:
-            type: configuration(string)
-            name: "Result WAR File Name"
-          options:
-            type: configuration(string)
-            name: "Build Options"
-      required:
-        - source
-        - cache
-      configuration:
-        docker.image: qubell/maven-builder:latest
-        docker.command: [ "sh", "-c", "rm /source/{$.configuration.war-path} ; mvn -DskipTests=true clean package 1>&2 && cp `find target -name '*.war'` /source/{$.configuration.war-path}" ]
-        docker.daemonize: false
-        docker.volumes:
-          "/source": "{$.source.*.volume-name[0]}"
-          "/root/.m2": "{$.cache.*.volume-name[0]}"
-        docker.signals:  
-          build.volume-name: "{$.source.*.volume-name[0]}"
-          build.war-path: "{$.configuration.war-path}?{$.source.*.git-commit[0]}"
-    http:
-      type: docker.Container
-      interfaces:
-        www:
-          volume-name: consume-signal(string)
-          war-path:    consume-signal(string)
-        server:
-          artifact-url:
-            type: publish-signal(string)
-            name: "WAR Url"
-      required:
-        - www
-      configuration:
-        docker.image: fnichol/uhttpd
-        docker.volumes:
-          "/www": "{$.www.*.volume-name[0]}"
+          PUBLISH_PATH: "{$.configuration.war-path}"
+          ARTIFACT_PATTERN: "*.war"
+        docker.signals:           
+          war.url: "http://{$.docker.ports.80.host}:{$.docker.ports.80.port}/{$.configuration.war-path}?{$.configuration.git-branch}"
         docker.expose:
           "80": "*"
-        docker.signals:
-          server.artifact-url: "http://{$.docker.ports.80.host}:{$.docker.ports.80.port}/{$.www.*.war-path[0]}"
-  bindings:
-    - [git#volume, data]
-    - [maven#source, git]
-    - [maven#cache, cache]
-    - [http#www, maven]
+    checker:
+      type: cobalt.common.HttpEndpoint
+      configuration:
+        configuration.method: HEAD
