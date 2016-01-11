@@ -34,9 +34,9 @@ application:
           docker-image-id:
             type: publish-signal(string)
             name: "Docker Image ID"
-          docker-container-id: 
+          docker-container-name: 
             type: publish-signal(string)
-            name: "Docker Container ID"
+            name: "Docker Container Name"
       configuration:
         docker.image: "{$.configuration.docker-image-id}"
         docker.environment:
@@ -47,7 +47,7 @@ application:
         docker.signals:           
           war.url: "http://{$.docker.ports.80.host}:{$.docker.ports.80.port}/{$.configuration.war-path}?{$.configuration.git-branch}"
           docker-container.docker-image-id: "{$.configuration.docker-image-id}"
-          docker-container.docker-container-id: "{$.docker.name}"
+          docker-container.docker-container-name: "{$.docker.name}"
         docker.expose:
           "80": "*"
     checker:
