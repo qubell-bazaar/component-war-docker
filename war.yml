@@ -6,6 +6,7 @@ application:
       artifact-url: bind(checker#connection.url)
   configuration:
     configuration.war-path: "application.war"
+    configuration.docker-image-id: "qubell/artifact-builder:latest"
   bindings:
     - [builder, checker]
   components:
@@ -20,14 +21,24 @@ application:
             type: configuration(string)
             name: "Branch"
           war-path:
-              type: configuration(string)
-              name: "Result WAR File Name"
+            type: configuration(string)
+            name: "Result WAR File Name"
+          docker-image-id:
+            type: configuration(string)
+            name: "Docker Image ID"
         war:
           url:
             type: publish-signal(string)
             name: "WAR Url"
+        docker-container:
+          docker-image-id:
+            type: publish-signal(string)
+            name: "Docker Image ID"
+          docker-container-name: 
+            type: publish-signal(string)
+            name: "Docker Container Name"
       configuration:
-        docker.image: qubell/artifact-builder:latest
+        docker.image: "{$.configuration.docker-image-id}"
         docker.environment:
           GIT_URL: "{$.configuration.git-url}"
           GIT_BRANCH: "{$.configuration.git-branch}"
@@ -35,6 +46,8 @@ application:
           ARTIFACT_PATTERN: "*.war"
         docker.signals:           
           war.url: "http://{$.docker.ports.80.host}:{$.docker.ports.80.port}/{$.configuration.war-path}?{$.configuration.git-branch}"
+          docker-container.docker-image-id: "{$.configuration.docker-image-id}"
+          docker-container.docker-container-name: "{$.docker.name}"
         docker.expose:
           "80": "*"
     checker:
